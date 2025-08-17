@@ -19,36 +19,22 @@ logfiles='/var/log/syslog /var/log/syslog.1'
 
 # get all lines with smartd entries from syslog
 lines=$(tac $logfiles | grep -hiP 'smartd\[[[:digit:]]+\]:' | grep -iP "previous self-test")
-
 get_drive_temperature() {
     local drive="$1"
-
-    # Check if device exists
-    if [[ ! -b "$drive" ]]; then
-        echo "Error: Drive '$drive' not found." >&2
-        return 1
+    local info="$(sudo smartctl -a $drive)"
+    local temp=$(echo "$info" | grep '194 Temp' | awk '{print $10}')
+    if [[ $temp == '' ]]; then
+        temp=$(echo "$info" | grep '190 Airflow' | awk '{print $10}')
     fi
-
-    # Run smartctl without sudo
-    local info
-    if ! info="$(sudo smartctl -a "$drive" 2>/dev/null)"; then
-        echo "Error: Failed to read SMART data from '$drive'." >&2
-        return 1
+    if [[ $temp == '' ]]; then
+        temp=$(echo "$info" | grep 'Temperature Sensor 1:' | awk '{print $4}')
     fi
-
-    # Extract temperature from various possible fields
-    local temp=""
-    temp=$(echo "$info" | grep -E '194\s+Temp' | awk '{print $10}')
-    [[ -z "$temp" ]] && temp=$(echo "$info" | grep -E '190\s+Airflow' | awk '{print $10}')
-    [[ -z "$temp" ]] && temp=$(echo "$info" | grep 'Temperature Sensor 1:' | awk '{print $4}')
-    [[ -z "$temp" ]] && temp=$(echo "$info" | grep 'Current Drive Temperature:' | awk '{print $4}')
-    [[ -z "$temp" ]] && temp=$(echo "$info" | grep -m1 'Temperature:' | awk '{print $2}')
-
-    if [[ -z "$temp" ]]; then
-        echo "Error: Could not determine temperature for '$drive'." >&2
-        return 1
+    if [[ $temp == '' ]]; then
+        temp=$(echo "$info" | grep 'Current Drive Temperature:' | awk '{print $4}')
     fi
-
+    if [[ $temp == '' ]]; then
+        temp=$(echo "$info" | grep 'Temperature:' | awk '{print $2}')
+    fi
     echo "$temp"
 }
 
