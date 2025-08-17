@@ -5,4 +5,4 @@ if [ -f /var/lib/unattended-upgrades/kept-back ]; then
     out="$(/usr/share/unattended-upgrades/update-motd-unattended-upgrades)"
 fi
 printf "\nunattended upgrades status:\n"
-printf "  $out"
+printf "  $out\n"
