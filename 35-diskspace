@@ -1,0 +1,14 @@
+#!/bin/bash
+THRESHOLD=20
+DISK_INFO=$(df -h --exclude-type=tmpfs | awk -v threshold="$THRESHOLD" '
+NR > 1 {
+        usage = $5 + 0;
+        if (usage > threshold) {
+                        printf "%s,%s,%s,%s\n", $1, $6, $5, $4;
+    }
+}')
+if [ -n "$DISK_INFO" ]; then
+        printf "\n\033[1;31mWARNING: The following disks have low capacity:\033[0m\n"
+        HEADER="Filesystem,Mountpoint,Used%,Available\n"
+                (echo -e "$HEADER$DISK_INFO") | column -ts ',' | sed 's/^/  /'
+fi
