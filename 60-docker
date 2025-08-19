@@ -23,7 +23,9 @@ for i in "${!containers[@]}"; do
         out+="\n"
     fi
 done
-out+="\n"
 
-printf "\ndocker status:\n"
-printf "$out" | column -ts $',' | sed -e 's/^/  /'
+if [ ! -z "$out" ]; then
+    out+="\n"
+    printf "\ndocker status:\n"
+    printf "$out" | column -ts $',' | sed -e 's/^/  /'
+fi
